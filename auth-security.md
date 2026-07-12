@@ -162,3 +162,36 @@ Bearer <token> ─────▶  JwtAuthenticationFilter  (validate signature)
                     │    denied  → 403 stop                            │    enforceOwnership()
                     └──────────────────────────────────────────────────┘
 a    
+
+
+
+RegisterRequest / LoginRequest
+        │
+        ▼
+AuthController → AuthService
+                     │ BCrypt.encode / BCrypt.matches
+                     │ UserRepository (DB)
+                     ▼
+              JwtTokenProvider.generateToken()
+                     │ HMAC-SHA256(payload, JWT_SECRET)
+                     ▼
+              AuthResponse (token) → client
+
+─────────────────────────────────────────────
+
+Client sends: Authorization: Bearer <token>
+        │
+        ▼
+JwtAuthenticationFilter
+        │ JwtTokenValidator.parse()
+        │ HMAC-SHA256 verify + expiry check
+        │ extract userId + role
+        ▼
+RoleAuthorizationFilter
+        │ check role against path rules
+        ▼
+BookingController (@RequestHeader X-User-Id, X-User-Role)
+        │
+        ▼
+BookingService.enforceOwnership()
+
